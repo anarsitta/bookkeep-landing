@@ -46,7 +46,6 @@ const currentYear = new Date().getFullYear()
             Юридический адрес: г. Москва, ул. Примерная, д. 1
           </p>
         </div>
-        <a href="#" class="footer__privacy">Политика конфиденциальности</a>
       </div>
     </div>
   </footer>
@@ -155,17 +154,6 @@ const currentYear = new Date().getFullYear()
   margin-top: 0.25rem;
   font-size: 0.75rem !important;
   opacity: 0.6;
-}
-
-.footer__privacy {
-  font-size: 0.8125rem;
-  color: var(--c-text-muted);
-  transition: color var(--transition);
-  white-space: nowrap;
-}
-
-.footer__privacy:hover {
-  color: #fff;
 }
 
 @media (max-width: 768px) {
