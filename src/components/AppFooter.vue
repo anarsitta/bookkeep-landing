@@ -29,10 +29,10 @@ const currentYear = new Date().getFullYear()
           <a href="mailto:info@example.com" class="footer__link">info@example.com</a>
           <div class="footer__socials">
             <a href="#" class="footer__social" title="VK" target="_blank" rel="noopener">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21.579 6.855c.14-.465 0-.806-.662-.806h-2.193c-.558 0-.813.295-.953.619 0 0-1.115 2.719-2.695 4.482-.51.51-.743.673-.982.673-.14 0-.341-.163-.341-.628V6.855c0-.558-.161-.806-.626-.806H9.642c-.348 0-.558.259-.558.504 0 .528.79.65.871 2.138v3.228c0 .707-.128.836-.407.836-.743 0-2.551-2.729-3.624-5.853-.21-.607-.42-.852-.98-.852H2.75c-.627 0-.75.295-.75.619 0 .58.743 3.462 3.461 7.271 1.812 2.601 4.363 4.011 6.687 4.011 1.393 0 1.565-.313 1.565-.852v-1.966c0-.627.132-.752.574-.752.325 0 .882.163 2.183 1.417 1.486 1.486 1.732 2.153 2.568 2.153h2.193c.627 0 .94-.313.76-.931-.198-.616-.907-1.51-1.849-2.569-.51-.603-1.277-1.253-1.51-1.579-.326-.418-.233-.603 0-.975 0 0 2.672-3.761 2.95-5.04Z"/></svg>
+              <img src="/vk_icon.svg" alt="VK" class="footer__social-icon" width="20" height="20" />
             </a>
             <a href="#" class="footer__social" title="MAX" target="_blank" rel="noopener">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2Zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.2-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.37.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38Z"/></svg>
+              <img src="/max_icon.svg" alt="MAX" class="footer__social-icon" width="20" height="20" />
             </a>
           </div>
         </div>
@@ -116,16 +116,26 @@ const currentYear = new Date().getFullYear()
   border-radius: var(--radius-sm);
   background: var(--c-dark-card);
   border: 1px solid var(--c-dark-border);
-  font-size: 0.6875rem;
-  font-weight: 700;
   color: var(--c-text-muted);
   transition: all var(--transition);
 }
 
+.footer__social-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  opacity: 0.85;
+  transition: opacity var(--transition);
+}
+
 .footer__social:hover {
   border-color: var(--c-accent);
-  color: #fff;
   background: rgba(230, 57, 70, 0.12);
+}
+
+.footer__social:hover .footer__social-icon {
+  opacity: 1;
 }
 
 .footer__bottom {
