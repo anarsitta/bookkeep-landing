@@ -26,7 +26,7 @@ const steps = [
         >
           <div class="process__card-header">
             <span class="process__num">{{ step.num }}</span>
-            <span v-if="i < steps.length - 1" class="process__connector" />
+            <span class="process__connector" />
           </div>
           <h3 class="process__title">{{ step.title }}</h3>
           <p class="process__desc">{{ step.desc }}</p>
@@ -42,6 +42,7 @@ const steps = [
 }
 
 .process__grid {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.25rem;
@@ -50,15 +51,16 @@ const steps = [
 .process__card {
   position: relative;
   padding: 2rem 1.5rem 1.75rem;
-  background: var(--c-light);
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
   border: 1px solid var(--c-border);
   border-radius: var(--radius-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   transition: all var(--transition);
 }
 
 .process__card:hover {
-  border-color: var(--c-accent);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border-color: rgba(230, 57, 70, 0.35);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(230, 57, 70, 0.06);
   transform: translateY(-2px);
 }
 
@@ -89,9 +91,11 @@ const steps = [
 
 .process__connector {
   flex: 1;
-  height: 1px;
-  background: var(--c-border);
+  min-width: 0.5rem;
+  height: 2px;
+  background: linear-gradient(90deg, var(--c-border) 0%, rgba(226, 232, 240, 0.6) 100%);
   margin-left: 0.75rem;
+  border-radius: 1px;
 }
 
 .process__title {
