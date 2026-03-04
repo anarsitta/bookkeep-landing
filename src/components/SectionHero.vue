@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import heroVideo from '@/assets/video1.mp4'
+
 const steps = [
   'Анализ ситуации',
   'Чёткий план действий',
@@ -10,7 +12,7 @@ const steps = [
 <template>
   <section class="hero video-bg">
     <video class="video-bg__video" autoplay muted loop playsinline>
-      <!-- <source src="/videos/hero-bg.mp4" type="video/mp4"> -->
+      <source :src="heroVideo" type="video/mp4">
     </video>
     <div class="video-bg__overlay hero__overlay" />
 
@@ -72,6 +74,11 @@ const steps = [
   min-height: 100dvh;
   display: flex;
   align-items: center;
+}
+
+/* Видео чуть «отдалено», чтобы было видно больше кадра */
+.hero :deep(.video-bg__video) {
+  transform: translate(-50%, -50%) scale(0.8);
 }
 
 .hero__overlay {

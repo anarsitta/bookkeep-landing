@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import trustVideo from '@/assets/video2.mp4'
+
 const trustItems = [
   {
     title: 'Комплексный подход',
@@ -40,8 +42,13 @@ const highlights = [
 </script>
 
 <template>
-  <section id="trust" class="section section--dark trust">
-    <div class="container">
+  <section id="trust" class="section section--dark trust video-bg">
+    <video class="video-bg__video" autoplay muted loop playsinline>
+      <source :src="trustVideo" type="video/mp4">
+    </video>
+    <div class="video-bg__overlay trust__overlay" />
+    <div class="video-bg__content">
+      <div class="container">
       <span class="section-label" v-reveal>Преимущества</span>
       <h2 class="section-title" v-reveal>Почему нам доверяют сложные ситуации</h2>
       <p class="section-subtitle section-subtitle--light" v-reveal>
@@ -86,11 +93,25 @@ const highlights = [
       <p class="trust__tagline" v-reveal>
         Наши специалисты способны потушить любой пожар в вашей отчётности
       </p>
+      </div>
     </div>
   </section>
 </template>
 
 <style scoped>
+.trust.video-bg {
+  background: transparent;
+}
+
+.trust__overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(11, 17, 32, 0.92) 0%,
+    rgba(11, 17, 32, 0.94) 50%,
+    rgba(11, 17, 32, 0.96) 100%
+  );
+}
+
 .trust__grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
