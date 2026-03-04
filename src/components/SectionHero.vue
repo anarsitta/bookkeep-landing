@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import heroVideo from '@/assets/video1.mp4'
+import heroVideo from '@/assets/video1.webm'
 
 const steps = [
   'Анализ ситуации',
@@ -12,7 +12,7 @@ const steps = [
 <template>
   <section class="hero video-bg">
     <video class="video-bg__video" autoplay muted loop playsinline>
-      <source :src="heroVideo" type="video/mp4">
+      <source :src="heroVideo" type="video/webm">
     </video>
     <div class="video-bg__overlay hero__overlay" />
 

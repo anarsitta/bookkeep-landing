@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import trustVideo from '@/assets/video2.mp4'
+import trustVideo from '@/assets/video2.webm'
 
 const trustItems = [
   {
@@ -44,7 +44,7 @@ const highlights = [
 <template>
   <section id="trust" class="section section--dark trust video-bg">
     <video class="video-bg__video" autoplay muted loop playsinline>
-      <source :src="trustVideo" type="video/mp4">
+      <source :src="trustVideo" type="video/webm">
     </video>
     <div class="video-bg__overlay trust__overlay" />
     <div class="video-bg__content">
