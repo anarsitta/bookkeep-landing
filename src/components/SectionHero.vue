@@ -76,9 +76,10 @@ const steps = [
   align-items: center;
 }
 
-/* Видео чуть «отдалено», чтобы было видно больше кадра */
+/* Видео на весь фон, центр кадра в приоритете при обрезке */
 .hero :deep(.video-bg__video) {
-  transform: translate(-50%, -50%) scale(0.8);
+  object-fit: cover;
+  object-position: center center;
 }
 
 .hero__overlay {
