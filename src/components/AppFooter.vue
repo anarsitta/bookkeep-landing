@@ -1,4 +1,15 @@
 <script setup lang="ts">
+import {
+  operatorEmail,
+  operatorPhone,
+  operatorName,
+  operatorInn,
+  operatorOgrn,
+  operatorAddress,
+  linkVk,
+  linkMax,
+} from '@/config'
+
 const currentYear = new Date().getFullYear()
 </script>
 
@@ -25,13 +36,13 @@ const currentYear = new Date().getFullYear()
 
         <div class="footer__contacts">
           <h4 class="footer__heading">Связаться</h4>
-          <a href="tel:+70000000000" class="footer__link">+7 (000) 000-00-00</a>
-          <a href="mailto:info@example.com" class="footer__link">info@example.com</a>
+          <a :href="`tel:${operatorPhone.replace(/\s/g, '')}`" class="footer__link">{{ operatorPhone }}</a>
+          <a :href="`mailto:${operatorEmail}`" class="footer__link">{{ operatorEmail }}</a>
           <div class="footer__socials">
-            <a href="#" class="footer__social" title="VK" target="_blank" rel="noopener">
+            <a :href="linkVk || '#'" class="footer__social" title="VK" target="_blank" rel="noopener">
               <img src="/vk_icon.svg" alt="VK" class="footer__social-icon" width="20" height="20" />
             </a>
-            <a href="#" class="footer__social" title="MAX" target="_blank" rel="noopener">
+            <a :href="linkMax || '#'" class="footer__social" title="MAX" target="_blank" rel="noopener">
               <img src="/max_icon.svg" alt="MAX" class="footer__social-icon" width="20" height="20" />
             </a>
           </div>
@@ -40,10 +51,10 @@ const currentYear = new Date().getFullYear()
 
       <div class="footer__bottom">
         <div class="footer__legal">
-          <p>&copy; {{ currentYear }} ООО «Автопрофи». Все права защищены.</p>
+          <p>&copy; {{ currentYear }} {{ operatorName }}. Все права защищены.</p>
           <p class="footer__requisites">
-            ИНН 0000000000 &middot; ОГРН 0000000000000 &middot;
-            Юридический адрес: г. Москва, ул. Примерная, д. 1
+            ИНН {{ operatorInn }} &middot; ОГРН {{ operatorOgrn }} &middot;
+            {{ operatorAddress }}
           </p>
         </div>
       </div>

@@ -1,0 +1,10 @@
+export const operatorEmail = import.meta.env.OPERATOR_EMAIL
+export const operatorPhone = '+79109786969'
+export const linkVk = import.meta.env.OPERATOR_LINK_VK ?? ''
+export const linkMax = import.meta.env.OPERATOR_LINK_MAX ?? ''
+export const operatorFullName = 'Общество с ограниченной ответственностью «Автопрофи»'
+export const operatorName = 'ООО «Автопрофи»'
+export const operatorOgrn = '1237600011770'
+export const operatorInn = '7604394907'
+export const operatorKpp = '760401001'
+export const operatorAddress = '150049, Ярославская область, г. Ярославль, пр-кт Толбухина, д. 17/65, помещ. 42'

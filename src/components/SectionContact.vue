@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed, nextTick } from 'vue'
+import DocumentModals from './DocumentModals.vue'
 
 const form = reactive({
   name: '',
@@ -7,18 +8,125 @@ const form = reactive({
   message: '',
   needLawyer: false,
   needFinancist: false,
+  agreeConsent: false,
+  consentMarketing: false,
 })
+
+const docModalsRef = ref<InstanceType<typeof DocumentModals> | null>(null)
 
 const isSubmitting = ref(false)
 const isSubmitted = ref(false)
+const submitError = ref('')
+const phoneTouched = ref(false)
+
+/** Нормализует цифры: 8 в начале → 7, иначе подставляем 7 в начало (российский номер). */
+function normalizePhoneDigits(raw: string): string {
+  let d = raw.replace(/\D/g, '')
+  if (d.startsWith('8')) d = '7' + d.slice(1)
+  else if (d.length > 0 && d[0] !== '7') d = '7' + d
+  return d.slice(0, 11)
+}
+
+/** Из цифр собирает строку в формате +7 (XXX) XXX-XX-XX (ожидает начало с 7 или пусто). */
+function formatPhoneMask(digits: string): string {
+  if (digits.length === 0) return ''
+  if (digits.length <= 1) return '+7'
+  if (digits.length <= 4) return `+7 (${digits.slice(1)}`
+  if (digits.length <= 7) return `+7 (${digits.slice(1, 4)}) ${digits.slice(4)}`
+  return `+7 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 9)}-${digits.slice(9, 11)}`
+}
+
+function onPhoneInput(e: Event) {
+  const el = e.target as HTMLInputElement
+  const digits = normalizePhoneDigits(el.value || '')
+  form.phone = formatPhoneMask(digits)
+  const cursorAfter = digits.length
+  nextTick(() => {
+    const pos = positionAfterDigits(form.phone, cursorAfter)
+    el.setSelectionRange(pos, pos)
+  })
+}
+
+/** Позиция в строке после N цифр (для курсора) */
+function positionAfterDigits(str: string, digitCount: number): number {
+  let count = 0
+  for (let i = 0; i < str.length; i++) {
+    if (/\d/.test(str.charAt(i))) count++
+    if (count >= digitCount) return i + 1
+  }
+  return str.length
+}
+
+/** Валидация российского номера: +7/8 и 10 цифр, или 10 цифр (с ведущей 7). */
+function isRussianPhone(value: string): boolean {
+  const digits = value.replace(/\D/g, '')
+  if (digits.length === 11) return digits[0] === '7' || digits[0] === '8'
+  if (digits.length === 10) return true
+  return false
+}
+
+const phoneError = computed(() => {
+  const v = form.phone.trim()
+  if (!v) return 'Укажите номер телефона'
+  if (!isRussianPhone(v)) return 'Введите корректный российский номер (+7 …)'
+  return ''
+})
+
+const showPhoneError = computed(() => phoneTouched.value && phoneError.value)
+
+const canSubmit = computed(() =>
+  form.name.trim() &&
+  form.phone.trim() &&
+  !phoneError.value &&
+  form.message.trim() &&
+  form.agreeConsent
+)
+
+function openDoc(doc: 'policy' | 'consent') {
+  docModalsRef.value?.open(doc)
+}
+
+function closeSuccess() {
+  isSubmitted.value = false
+}
 
 const handleSubmit = async () => {
-  if (!form.name || !form.phone) return
+  if (!canSubmit.value) return
+  submitError.value = ''
   isSubmitting.value = true
-  // TODO: подключить отправку формы
-  await new Promise((resolve) => setTimeout(resolve, 1200))
-  isSubmitting.value = false
-  isSubmitted.value = true
+  try {
+    const res = await fetch('/api/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        message: form.message.trim(),
+        needLawyer: form.needLawyer,
+        needFinancist: form.needFinancist,
+        consentMarketing: form.consentMarketing,
+      }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      const msg = data.detail
+        ? `${data.error} ${data.detail}`
+        : (data.error || `Ошибка ${res.status}`)
+      throw new Error(msg)
+    }
+    isSubmitted.value = true
+    form.name = ''
+    form.phone = ''
+    form.message = ''
+    form.needLawyer = false
+    form.needFinancist = false
+    form.agreeConsent = false
+    form.consentMarketing = false
+  } catch (e) {
+    submitError.value = e instanceof Error ? e.message : 'Не удалось отправить. Попробуйте позже.'
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
@@ -60,12 +168,11 @@ const handleSubmit = async () => {
 
           <div class="contact__form-wrap" v-reveal>
             <form
-              v-if="!isSubmitted"
               class="contact__form"
               @submit.prevent="handleSubmit"
             >
               <div class="form-field">
-                <label class="form-label" for="name">Имя</label>
+                <label class="form-label" for="name">Имя <span class="form-label__required">*</span></label>
                 <input
                   id="name"
                   v-model="form.name"
@@ -77,24 +184,34 @@ const handleSubmit = async () => {
               </div>
 
               <div class="form-field">
-                <label class="form-label" for="phone">Телефон</label>
+                <label class="form-label" for="phone">Телефон <span class="form-label__required">*</span></label>
                 <input
                   id="phone"
-                  v-model="form.phone"
+                  :value="form.phone"
                   type="tel"
+                  inputmode="numeric"
+                  autocomplete="tel"
+                  maxlength="18"
                   class="form-input"
+                  :class="{ 'form-input--error': showPhoneError }"
                   placeholder="+7 (___) ___-__-__"
                   required
+                  :aria-invalid="Boolean(showPhoneError)"
+                  :aria-describedby="showPhoneError ? 'phone-error' : undefined"
+                  @input="onPhoneInput"
+                  @blur="phoneTouched = true"
                 >
+                <span v-if="showPhoneError" id="phone-error" class="form-field__error">{{ phoneError }}</span>
               </div>
 
               <div class="form-field">
-                <label class="form-label" for="message">Краткое описание ситуации</label>
+                <label class="form-label" for="message">Краткое описание ситуации <span class="form-label__required">*</span></label>
                 <textarea
                   id="message"
                   v-model="form.message"
                   class="form-input form-textarea"
                   placeholder="Опишите вашу ситуацию..."
+                  required
                 />
               </div>
 
@@ -109,26 +226,70 @@ const handleSubmit = async () => {
                 </label>
               </div>
 
+              <!-- Блок согласий — визуально отделён от остальных галочек -->
+              <div class="form-consents">
+                <label class="form-checkbox">
+                  <input v-model="form.agreeConsent" type="checkbox" required>
+                  <span>
+                    Я даю
+                    <button type="button" class="form-link" @click.prevent="openDoc('consent')">согласие</button>
+                    на обработку персональных данных в связи с
+                    <button type="button" class="form-link" @click.prevent="openDoc('policy')">политикой</button>
+                  </span>
+                </label>
+
+                <label class="form-checkbox">
+                  <input v-model="form.consentMarketing" type="checkbox">
+                  <span>Согласие на рекламные рассылки (получение рекламы и т.д.)</span>
+                </label>
+              </div>
+
+              <p v-if="submitError" class="form-field__error form-field__error--block">
+                {{ submitError }}
+              </p>
+
               <button
                 type="submit"
                 class="btn btn--primary btn--lg contact__submit"
-                :disabled="isSubmitting"
+                :disabled="isSubmitting || !canSubmit"
               >
                 {{ isSubmitting ? 'Отправка...' : 'Получить план действий' }}
               </button>
             </form>
-
-            <div v-else class="contact__success">
-              <div class="contact__success-icon">✓</div>
-              <h3 class="contact__success-title">Заявка отправлена</h3>
-              <p class="contact__success-text">
-                Мы свяжемся с вами в течение 15 минут.
-              </p>
-            </div>
           </div>
         </div>
       </div>
     </div>
+
+    <DocumentModals ref="docModalsRef" />
+
+    <Teleport to="body">
+      <Transition name="success-popup">
+        <div
+          v-if="isSubmitted"
+          class="success-popup__backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="success-title"
+          @click.self="closeSuccess"
+        >
+          <div class="success-popup__box">
+            <div class="success-popup__icon">✓</div>
+            <h3 id="success-title" class="success-popup__title">Заявка отправлена</h3>
+            <p class="success-popup__text">
+              Мы свяжемся с вами в течение 15 минут.
+            </p>
+            <button
+              type="button"
+              class="success-popup__btn"
+              @click="closeSuccess"
+            >
+              Закрыть
+            </button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </section>
 </template>
 
@@ -143,7 +304,7 @@ const handleSubmit = async () => {
 
 .contact__grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1.1fr;
   gap: 4rem;
   align-items: center;
 }
@@ -186,7 +347,7 @@ const handleSubmit = async () => {
 }
 
 .contact__form-wrap {
-  padding: 2.5rem;
+  padding: 1.8rem;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-lg);
@@ -211,6 +372,10 @@ const handleSubmit = async () => {
   color: var(--c-text-muted);
 }
 
+.form-label__required {
+  color: var(--c-accent);
+}
+
 .form-input {
   padding: 0.8125rem 1rem;
   background: rgba(255, 255, 255, 0.05);
@@ -224,6 +389,19 @@ const handleSubmit = async () => {
 .form-input:focus {
   outline: none;
   border-color: var(--c-accent);
+}
+
+.form-input--error {
+  border-color: var(--c-accent);
+}
+
+.form-field__error {
+  font-size: 0.8125rem;
+  color: var(--c-accent);
+}
+
+.form-field__error--block {
+  margin: 0;
 }
 
 .form-input::placeholder {
@@ -257,6 +435,27 @@ const handleSubmit = async () => {
   cursor: pointer;
 }
 
+.form-consents {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--c-accent);
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.form-link:hover {
+  color: #ff6b7a;
+}
+
 .contact__submit {
   width: 100%;
   margin-top: 0.5rem;
@@ -267,35 +466,91 @@ const handleSubmit = async () => {
   cursor: not-allowed;
 }
 
-.contact__success {
-  text-align: center;
-  padding: 2rem 0;
-}
-
-.contact__success-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: #22c55e;
-  color: #fff;
-  font-size: 1.5rem;
-  font-weight: 700;
+/* Всплывашка успешной отправки по центру */
+.success-popup__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 1.25rem;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
 }
 
-.contact__success-title {
+.success-popup__box {
+  text-align: center;
+  padding: 2rem 2.5rem;
+  background: #0b1120;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+  max-width: 360px;
+}
+
+.success-popup__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 auto 1rem;
+}
+
+.success-popup__title {
   font-size: 1.25rem;
   font-weight: 700;
   color: #fff;
-  margin-bottom: 0.5rem;
+  margin: 0 0 0.5rem;
 }
 
-.contact__success-text {
+.success-popup__text {
   font-size: 0.9375rem;
   color: var(--c-text-muted);
+  margin: 0 0 1.5rem;
+  line-height: 1.5;
+}
+
+.success-popup__btn {
+  padding: 0.625rem 1.5rem;
+  background: var(--c-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.success-popup__btn:hover {
+  opacity: 0.9;
+}
+
+.success-popup-enter-active,
+.success-popup-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.success-popup-enter-from,
+.success-popup-leave-to {
+  opacity: 0;
+}
+
+.success-popup-enter-active .success-popup__box,
+.success-popup-leave-active .success-popup__box {
+  transition: transform 0.25s ease;
+}
+
+.success-popup-enter-from .success-popup__box,
+.success-popup-leave-to .success-popup__box {
+  transform: scale(0.96);
 }
 
 @media (max-width: 768px) {

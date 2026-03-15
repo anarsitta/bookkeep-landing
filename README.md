@@ -31,9 +31,13 @@ npm install
 
 ### Compile and Hot-Reload for Development
 
+Запускайте **одной** командой — поднимутся и сайт (Vite), и сервер отправки писем (порт 3001):
+
 ```sh
 npm run dev
 ```
+
+В терминале должны появиться оба сообщения: от Vite (сайт) и `Mail server started on http://localhost:3001`. Не запускайте отдельно `npm run dev:client` или `vite` — без сервера форма «Отправить» будет выдавать ошибку.
 
 ### Type-Check, Compile and Minify for Production
 

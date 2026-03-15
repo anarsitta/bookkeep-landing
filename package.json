@@ -4,16 +4,24 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "dotenv -e .env -- run-p dev:client dev:server",
+    "dev:client": "vite",
+    "dev:server": "node server/index.js",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build"
   },
   "dependencies": {
+    "@vue/server-renderer": "^3.5.0",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "nodemailer": "^6.10.1",
     "vue": "^3.5.29"
   },
   "devDependencies": {
+    "dotenv-cli": "^7.4.2",
+    "vite-node": "^2.0.0",
     "@tsconfig/node24": "^24.0.4",
     "@types/node": "^24.11.0",
     "@vitejs/plugin-vue": "^6.0.4",
