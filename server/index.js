@@ -1,4 +1,6 @@
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import fs from 'node:fs'
 
 import dotenv from 'dotenv'
 import express from 'express'
@@ -7,6 +9,9 @@ import nodemailer from 'nodemailer'
 import { buildEmailHtml } from './emailTemplate.js'
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') })
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const distPath = path.resolve(__dirname, '..', 'dist')
 
 const port = Number(process.env.PORT || 3001)
 const operatorEmail = (process.env.OPERATOR_EMAIL || '').trim()
@@ -64,6 +69,15 @@ app.post('/api/send', async (req, res) => {
     })
   }
 })
+
+// Продакшен: раздача статики и SPA (если есть папка dist)
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath))
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) return res.status(404).end()
+    res.sendFile(path.join(distPath, 'index.html'))
+  })
+}
 
 app.listen(port, () => {
   console.log(`Mail server started`)
