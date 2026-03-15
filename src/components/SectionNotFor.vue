@@ -15,8 +15,8 @@ onMounted(() => {
   if (hero) {
     observer = new IntersectionObserver(
       (entries) => {
-        const [entry] = entries
-        showAfterScroll.value = !entry.isIntersecting
+        const entry = entries[0]
+        if (entry) showAfterScroll.value = !entry.isIntersecting
       },
       { threshold: 0, rootMargin: '0px' }
     )

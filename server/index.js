@@ -20,7 +20,7 @@ const yandexAppPassword = (process.env.YANDEX_APP_PASSWORD || '').trim()
 const app = express()
 app.use(express.json())
 
-app.post('/api/send', async (req, res) => {
+app.post(['/api/send', '/api/send.php'], async (req, res) => {
   if (!operatorEmail || !yandexAppPassword) {
     return res.status(500).json({
       error: 'Не заданы OPERATOR_EMAIL и YANDEX_APP_PASSWORD в .env',

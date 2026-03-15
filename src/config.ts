@@ -1,5 +1,5 @@
 export const operatorEmail = import.meta.env.OPERATOR_EMAIL
-export const operatorPhone = '+79109786969'
+export const operatorPhone = 'phone'
 export const linkVk = import.meta.env.OPERATOR_LINK_VK ?? ''
 export const linkMax = import.meta.env.OPERATOR_LINK_MAX ?? ''
 export const operatorFullName = 'Общество с ограниченной ответственностью «Автопрофи»'

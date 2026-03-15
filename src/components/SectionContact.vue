@@ -95,7 +95,7 @@ const handleSubmit = async () => {
   submitError.value = ''
   isSubmitting.value = true
   try {
-    const res = await fetch('/api/send', {
+    const res = await fetch('/api/send.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
