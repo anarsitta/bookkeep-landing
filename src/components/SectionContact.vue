@@ -534,12 +534,12 @@ const handleSubmit = async () => {
 
 .success-popup__box {
   text-align: center;
-  padding: 2rem 2.5rem;
+  padding: 1.5rem 2rem;
   background: #0b1120;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-lg);
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
-  max-width: 360px;
+  max-width: 400px;
 }
 
 .success-popup__icon {
