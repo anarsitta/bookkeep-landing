@@ -10,9 +10,11 @@ import SectionCases from './components/SectionCases.vue'
 import SectionConsult from './components/SectionConsult.vue'
 import SectionContact from './components/SectionContact.vue'
 import AppFooter from './components/AppFooter.vue'
+import CookieConsentBanner from './components/CookieConsentBanner.vue'
 </script>
 
 <template>
+  <CookieConsentBanner />
   <AppHeader />
   <main>
     <SectionHero />

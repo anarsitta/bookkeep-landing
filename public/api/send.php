@@ -32,13 +32,15 @@ if (!$input) {
 
 $name    = trim($input['name'] ?? '') ?: '—';
 $phone   = trim($input['phone'] ?? '') ?: '—';
+$email   = trim($input['email'] ?? '') ?: '—';
 $message = trim($input['message'] ?? '') ?: '—';
 $needLawyer       = !empty($input['needLawyer']);
 $needFinancist    = !empty($input['needFinancist']);
 $consentMarketing = !empty($input['consentMarketing']);
 
-$subject = "Новая заявка: $name $phone";
-$html    = buildEmailHtml($name, $phone, $message, $needLawyer, $needFinancist, $consentMarketing);
+$contact = ($phone !== '—') ? $phone : (($email !== '—') ? $email : '—');
+$subject = "Новая заявка: $name $contact";
+$html    = buildEmailHtml($name, $phone, $email, $message, $needLawyer, $needFinancist, $consentMarketing);
 
 $result = smtpSend(
     $config['smtp_host'],
@@ -126,9 +128,10 @@ function esc($s) {
     return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 }
 
-function buildEmailHtml($name, $phone, $message, $needLawyer, $needFinancist, $consentMarketing) {
+function buildEmailHtml($name, $phone, $email, $message, $needLawyer, $needFinancist, $consentMarketing) {
     $name       = esc($name);
     $phone      = esc($phone);
+    $email      = esc($email);
     $messageHtml = nl2br(esc($message));
 
     $tags = '';
@@ -159,6 +162,7 @@ function buildEmailHtml($name, $phone, $message, $needLawyer, $needFinancist, $c
     .mail-label{color:#64748b;font-size:13px;margin-right:12px;}
     .mail-name{color:#0f172a;font-size:15px;font-weight:600;}
     .mail-phone{color:#1e3a5f;font-size:15px;font-weight:600;}
+    .mail-email{color:#1e3a5f;font-size:15px;font-weight:600;}
     .mail-message-label{margin:0 0 8px;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;}
     .mail-message-body{margin:0;color:#0f172a;font-size:15px;line-height:1.6;}
     .mail-footer{padding:16px 28px 24px;border-top:1px solid #e2e8f0;color:#94a3b8;font-size:12px;}
@@ -181,6 +185,7 @@ function buildEmailHtml($name, $phone, $message, $needLawyer, $needFinancist, $c
       <td class="mail-contact">
         <p style="margin:0 0 10px;"><span class="mail-label">Имя</span><span class="mail-name">$name</span></p>
         <p style="margin:0;"><span class="mail-label">Телефон</span><span class="mail-phone">$phone</span></p>
+        <p style="margin:0;"><span class="mail-label">Email</span><span class="mail-email">$email</span></p>
       </td>
     </tr>
     $tagsRow

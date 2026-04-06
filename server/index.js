@@ -30,6 +30,7 @@ app.post(['/api/send', '/api/send.php'], async (req, res) => {
   const {
     name = '',
     phone = '',
+    email = '',
     message = '',
     needLawyer = false,
     needFinancist = false,
@@ -38,7 +39,8 @@ app.post(['/api/send', '/api/send.php'], async (req, res) => {
 
   const data = {
     name: name || '—',
-    phone: phone || '—',
+    phone: phone || '',
+    email: email || '',
     message: message || '—',
     needLawyer,
     needFinancist,
@@ -57,7 +59,7 @@ app.post(['/api/send', '/api/send.php'], async (req, res) => {
       from: `"Экстренная бухгалтерия" <${operatorEmail}>`,
       to: operatorEmail,
       replyTo: operatorEmail,
-      subject: `Новая заявка: ${data.name} ${data.phone}`,
+      subject: `Новая заявка: ${data.name} ${data.phone ?? ''} ${data.email ?? ''}`,
       html: buildEmailHtml(data),
     })
     return res.json({ ok: true })

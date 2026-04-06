@@ -14,6 +14,7 @@ export function buildEmailHtml(data) {
   const esc = (s) => escapeHtml(String(s))
   const name = data.name ? esc(data.name) : '—'
   const phone = data.phone ? esc(data.phone) : '—'
+  const email = data.email ? esc(data.email) : '—'
   const messageHtml = data.message ? esc(data.message).replace(/\n/g, '<br>') : '—'
 
   const tag = (text, bg, color) =>
@@ -65,7 +66,8 @@ export function buildEmailHtml(data) {
       <td class="mail-contact">
         <p style="margin:0 0 10px;"><span class="mail-label">Имя</span><span class="mail-name">${name}</span></p>
         <p style="margin:0;"><span class="mail-label">Телефон</span><span class="mail-phone">${phone}</span></p>
-      </td>
+        <p style="margin:0;"><span class="mail-label">Email</span><span class="mail-email">${email}</span></p>
+        </td>
     </tr>
     ${tagsRow}
     <tr>

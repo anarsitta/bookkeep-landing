@@ -5,6 +5,7 @@ import DocumentModals from './DocumentModals.vue'
 const form = reactive({
   name: '',
   phone: '',
+  email: '',
   message: '',
   needLawyer: false,
   needFinancist: false,
@@ -18,6 +19,7 @@ const isSubmitting = ref(false)
 const isSubmitted = ref(false)
 const submitError = ref('')
 const phoneTouched = ref(false)
+const emailTouched = ref(false)
 
 /** Нормализует цифры: 8 в начале → 7, иначе подставляем 7 в начало (российский номер). */
 function normalizePhoneDigits(raw: string): string {
@@ -67,20 +69,46 @@ function isRussianPhone(value: string): boolean {
 
 const phoneError = computed(() => {
   const v = form.phone.trim()
-  if (!v) return 'Укажите номер телефона'
+  if (!v) return ''
   if (!isRussianPhone(v)) return 'Введите корректный российский номер (+7 …)'
   return ''
 })
 
 const showPhoneError = computed(() => phoneTouched.value && phoneError.value)
 
-const canSubmit = computed(() =>
-  form.name.trim() &&
-  form.phone.trim() &&
-  !phoneError.value &&
-  form.message.trim() &&
-  form.agreeConsent
-)
+function isValidEmail(value: string): boolean {
+  const v = value.trim()
+  if (!v) return false
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+}
+
+const emailError = computed(() => {
+  const v = form.email.trim()
+  if (!v) return ''
+  if (!isValidEmail(v)) return 'Введите корректный email'
+  return ''
+})
+
+const showEmailError = computed(() => emailTouched.value && emailError.value)
+
+const contactError = computed(() => {
+  const hasPhone = Boolean(form.phone.trim())
+  const hasEmail = Boolean(form.email.trim())
+  if (hasPhone || hasEmail) return ''
+  if (!phoneTouched.value && !emailTouched.value) return ''
+  return 'Укажите телефон или email'
+})
+
+const canSubmit = computed(() => {
+  const hasPhone = Boolean(form.phone.trim())
+  const hasEmail = Boolean(form.email.trim())
+
+  if (!form.name.trim() || !form.message.trim() || !form.agreeConsent) return false
+  if (!hasPhone && !hasEmail) return false
+  if (hasPhone && phoneError.value) return false
+  if (hasEmail && emailError.value) return false
+  return true
+})
 
 function openDoc(doc: 'policy' | 'consent') {
   docModalsRef.value?.open(doc)
@@ -101,6 +129,7 @@ const handleSubmit = async () => {
       body: JSON.stringify({
         name: form.name.trim(),
         phone: form.phone.trim(),
+        email: form.email.trim(),
         message: form.message.trim(),
         needLawyer: form.needLawyer,
         needFinancist: form.needFinancist,
@@ -117,11 +146,14 @@ const handleSubmit = async () => {
     isSubmitted.value = true
     form.name = ''
     form.phone = ''
+    form.email = ''
     form.message = ''
     form.needLawyer = false
     form.needFinancist = false
     form.agreeConsent = false
     form.consentMarketing = false
+    phoneTouched.value = false
+    emailTouched.value = false
   } catch (e) {
     submitError.value = e instanceof Error ? e.message : 'Не удалось отправить. Попробуйте позже.'
   } finally {
@@ -184,7 +216,7 @@ const handleSubmit = async () => {
               </div>
 
               <div class="form-field">
-                <label class="form-label" for="phone">Телефон <span class="form-label__required">*</span></label>
+                <label class="form-label" for="phone">Телефон</label>
                 <input
                   id="phone"
                   :value="form.phone"
@@ -195,7 +227,6 @@ const handleSubmit = async () => {
                   class="form-input"
                   :class="{ 'form-input--error': showPhoneError }"
                   placeholder="+7 (___) ___-__-__"
-                  required
                   :aria-invalid="Boolean(showPhoneError)"
                   :aria-describedby="showPhoneError ? 'phone-error' : undefined"
                   @input="onPhoneInput"
@@ -203,6 +234,28 @@ const handleSubmit = async () => {
                 >
                 <span v-if="showPhoneError" id="phone-error" class="form-field__error">{{ phoneError }}</span>
               </div>
+
+              <div class="form-field">
+                <label class="form-label" for="email">Email</label>
+                <input
+                  id="email"
+                  v-model="form.email"
+                  type="email"
+                  inputmode="email"
+                  autocomplete="email"
+                  class="form-input"
+                  :class="{ 'form-input--error': showEmailError }"
+                  placeholder="name@example.com"
+                  :aria-invalid="Boolean(showEmailError)"
+                  :aria-describedby="showEmailError ? 'email-error' : undefined"
+                  @blur="emailTouched = true"
+                >
+                <span v-if="showEmailError" id="email-error" class="form-field__error">{{ emailError }}</span>
+              </div>
+
+              <p v-if="contactError" class="form-field__error form-field__error--block">
+                {{ contactError }}
+              </p>
 
               <div class="form-field">
                 <label class="form-label" for="message">Краткое описание ситуации <span class="form-label__required">*</span></label>
