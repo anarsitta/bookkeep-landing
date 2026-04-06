@@ -65,44 +65,113 @@ if ($result === true) {
 
 /* ── SMTP ────────────────────────────────────────────── */
 
-function smtpSend($host, $port, $user, $pass, $from, $to, $subject, $htmlBody) {
+/**
+ * Читает ответ SMTP до конца многострочной последовательности (RFC 5321).
+ * Последняя строка: «код + пробел», промежуточные: «код + дефис».
+ */
+function smtp_read_response($sock) {
+    $buffer = '';
+    $max = 64;
+    while (--$max > 0) {
+        $line = fgets($sock, 8192);
+        if ($line === false) {
+            break;
+        }
+        $buffer .= $line;
+        if (strlen($line) >= 4 && $line[3] === ' ') {
+            break;
+        }
+    }
+    return $buffer;
+}
+
+function smtp_connect_ssl($host, $port) {
+    $ctx = stream_context_create([
+        'ssl' => [
+            'verify_peer' => false,
+            'verify_peer_name' => false,
+        ],
+    ]);
     $sock = @stream_socket_client(
-        "ssl://$host:$port", $errno, $errstr, 30,
+        "ssl://$host:$port",
+        $errno,
+        $errstr,
+        30,
         STREAM_CLIENT_CONNECT,
-        stream_context_create(['ssl' => ['verify_peer' => false, 'verify_peer_name' => false]])
+        $ctx
     );
-    if (!$sock) return "Connection failed: $errstr ($errno)";
+    if ($sock) {
+        stream_set_timeout($sock, 30);
+    }
+    return [$sock, $errno, $errstr];
+}
 
-    fgets($sock, 512);
+function smtp_auth_plain($sock, $user, $pass) {
+    $plain = base64_encode("\0" . $user . "\0" . $pass);
+    fputs($sock, 'AUTH PLAIN ' . $plain . "\r\n");
+    $authLine = trim(smtp_read_response($sock));
+    $code = strlen($authLine) >= 3 ? substr($authLine, 0, 3) : '';
+    return $code === '235' ? true : $authLine;
+}
 
-    fputs($sock, "EHLO localhost\r\n");
-    while ($line = fgets($sock, 512)) {
-        if (isset($line[3]) && $line[3] === ' ') break;
+function smtp_auth_login($sock, $user, $pass) {
+    fputs($sock, "AUTH LOGIN\r\n");
+    smtp_read_response($sock);
+    fputs($sock, base64_encode($user) . "\r\n");
+    smtp_read_response($sock);
+    fputs($sock, base64_encode($pass) . "\r\n");
+    $authLine = trim(smtp_read_response($sock));
+    $code = strlen($authLine) >= 3 ? substr($authLine, 0, 3) : '';
+    return $code === '235' ? true : $authLine;
+}
+
+function smtpSend($host, $port, $user, $pass, $from, $to, $subject, $htmlBody) {
+    [$sock, $errno, $errstr] = smtp_connect_ssl($host, $port);
+    if (!$sock) {
+        return "Connection failed: $errstr ($errno)";
     }
 
-    fputs($sock, "AUTH LOGIN\r\n");
-    fgets($sock, 512);
-
-    fputs($sock, base64_encode($user) . "\r\n");
-    fgets($sock, 512);
-
-    fputs($sock, base64_encode($pass) . "\r\n");
-    $auth = trim(fgets($sock, 512));
-    if (substr($auth, 0, 3) !== '235') {
+    $greet = smtp_read_response($sock);
+    if (!preg_match('/^220/m', trim($greet))) {
         fclose($sock);
-        return "Auth failed: $auth";
+        return 'Bad greeting: ' . trim($greet);
+    }
+
+    $ehloHost = preg_replace('/[^\w.-]+/', '', (string) gethostname()) ?: 'localhost';
+    fputs($sock, "EHLO $ehloHost\r\n");
+    smtp_read_response($sock);
+
+    $authOk = smtp_auth_plain($sock, $user, $pass);
+    if ($authOk !== true) {
+        $plainErr = $authOk;
+        fclose($sock);
+
+        [$sock2, $errno2, $errstr2] = smtp_connect_ssl($host, $port);
+        if (!$sock2) {
+            return "Connection failed (retry): $errstr2 ($errno2)";
+        }
+        smtp_read_response($sock2);
+        fputs($sock2, "EHLO $ehloHost\r\n");
+        smtp_read_response($sock2);
+
+        $authOk2 = smtp_auth_login($sock2, $user, $pass);
+        if ($authOk2 !== true) {
+            fclose($sock2);
+            return 'Auth failed: ' . $authOk2 . ' (PLAIN: ' . $plainErr . ')';
+        }
+        $sock = $sock2;
     }
 
     fputs($sock, "MAIL FROM:<$from>\r\n");
-    fgets($sock, 512);
+    smtp_read_response($sock);
 
     fputs($sock, "RCPT TO:<$to>\r\n");
-    fgets($sock, 512);
+    smtp_read_response($sock);
 
     fputs($sock, "DATA\r\n");
-    fgets($sock, 512);
+    smtp_read_response($sock);
 
-    $msg  = "From: =?UTF-8?B?" . base64_encode("Экстренная бухгалтерия") . "?= <$from>\r\n";
+    $msg  = "From: =?UTF-8?B?" . base64_encode('Экстренная бухгалтерия') . "?= <$from>\r\n";
     $msg .= "To: <$to>\r\n";
     $msg .= "Reply-To: <$from>\r\n";
     $msg .= "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n";
@@ -114,12 +183,12 @@ function smtpSend($host, $port, $user, $pass, $from, $to, $subject, $htmlBody) {
     $msg .= "\r\n.\r\n";
 
     fputs($sock, $msg);
-    $resp = trim(fgets($sock, 512));
+    $resp = trim(smtp_read_response($sock));
 
     fputs($sock, "QUIT\r\n");
     fclose($sock);
 
-    return (substr($resp, 0, 3) === '250') ? true : "Send failed: $resp";
+    return (strlen($resp) >= 3 && substr($resp, 0, 3) === '250') ? true : 'Send failed: ' . $resp;
 }
 
 /* ── Email template ──────────────────────────────────── */
